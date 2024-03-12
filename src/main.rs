@@ -1,22 +1,35 @@
 use bevy::prelude::*;
 use coordinate_system::{spherical_to_cartesian, SphericalCoordinates};
+use ode_solver::euler_solver::EulerSolver;
 use std::f32::consts::PI;
 
+use crate::ode_solver::solver::Solver;
+
 pub mod coordinate_system;
+pub mod ode_solver;
 
 #[derive(Component)]
 struct Planet {
     pub sphere_coords: SphericalCoordinates,
 }
 
+
+#[derive(Component)]
+struct SolverComponent {
+    pub solver: EulerSolver
+}
+
 fn setup_camera(mut commands: Commands) {
     
     let mut transform = Transform::default();
-    transform.rotate_axis(Vec3::X, -PI/2.0);
-    transform.translation += Vec3::new(0.0,10.0,0.0);
+    transform.translation += Vec3::new(0.0,0.0,10.0);
     commands.spawn(Camera3dBundle {
-        transform: transform,
+        transform,
         ..Default::default()
+    });
+
+    commands.spawn(SolverComponent {
+        solver: EulerSolver::new(0.0, 100.0)
     });
 }
 
@@ -61,11 +74,22 @@ fn update_planet(time: Res<Time>, mut planets: Query<(&mut Planet, &mut Transfor
     }
 }
 
+fn update_temp(time: Res<Time>, mut solvers: Query<&mut SolverComponent>) {
+    for mut solver in &mut solvers {
+        solver.solver.next_step(|_time, curr_t| {
+            -0.7 * (curr_t - 20.0)
+        }, time.delta_seconds());
+
+        println!("{} {}", solver.solver.time, solver.solver.state)
+    }
+}
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup_camera)
         .add_systems(Startup, spawn_scene)
         .add_systems(Update, update_planet)
+        .add_systems(Update, update_temp)
         .run();
 }
