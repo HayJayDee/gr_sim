@@ -1,4 +1,4 @@
-use super::solver::Solver;
+use super::solver::{SolveFun, Solver};
 
 
 pub struct EulerSolver {
@@ -16,9 +16,9 @@ impl EulerSolver {
 }
 
 impl Solver<f32> for EulerSolver {
-    fn next_step<F: Fn(f32, f32) -> f32>(self: &mut Self, fun: F, delta_time: f32) -> f32 {
+    fn next_step(&mut self, fun: &SolveFun<f32>, delta_time: f32) -> &f32 {
         self.time += delta_time;
         self.state += delta_time * fun(self.time, self.state);
-        self.state
+        &self.state
     }
 }

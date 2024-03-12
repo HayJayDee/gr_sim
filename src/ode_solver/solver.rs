@@ -1,4 +1,6 @@
 
+pub type SolveFun<T> = dyn Fn(f32, T) -> T;
+
 pub trait Solver<T> {
-    fn next_step<F: Fn(f32, T) -> T>(self: &mut Self, fun: F, delta_time: f32) -> f32;
+    fn next_step(&mut self, fun: &SolveFun<T>, delta_time: f32) -> &T;
 }

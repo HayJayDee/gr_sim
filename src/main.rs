@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use coordinate_system::{spherical_to_cartesian, SphericalCoordinates};
+use ndarray::Array1;
 use ode_solver::euler_solver::EulerSolver;
+use ode_solver::runge_kutta::RungeKutta4;
 use std::f32::consts::PI;
 
 use crate::ode_solver::solver::Solver;
@@ -16,7 +18,8 @@ struct Planet {
 
 #[derive(Component)]
 struct SolverComponent {
-    pub solver: EulerSolver
+    pub euler_solver: EulerSolver,
+    pub runge_solver: RungeKutta4<1>
 }
 
 fn setup_camera(mut commands: Commands) {
@@ -29,7 +32,11 @@ fn setup_camera(mut commands: Commands) {
     });
 
     commands.spawn(SolverComponent {
-        solver: EulerSolver::new(0.0, 100.0)
+        euler_solver: EulerSolver::new(0.0, 100.0),
+        runge_solver: RungeKutta4::<1> {
+            time: 0.0,
+            state: Array1::from_iter([100.0])
+        }
     });
 }
 
@@ -76,11 +83,13 @@ fn update_planet(time: Res<Time>, mut planets: Query<(&mut Planet, &mut Transfor
 
 fn update_temp(time: Res<Time>, mut solvers: Query<&mut SolverComponent>) {
     for mut solver in &mut solvers {
-        solver.solver.next_step(|_time, curr_t| {
-            -0.7 * (curr_t - 20.0)
+        solver.euler_solver.next_step(&|_time, curr_t| {
+            -0.07 * (curr_t - 20.0)
         }, time.delta_seconds());
-
-        println!("{} {}", solver.solver.time, solver.solver.state)
+        
+        solver.runge_solver.next_step(&|_time, curr_t| {
+            -0.07 * (curr_t - 20.0)
+        }, time.delta_seconds());
     }
 }
 
